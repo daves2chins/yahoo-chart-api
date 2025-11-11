@@ -25,37 +25,57 @@ def chart():
         close = data['Close'].squeeze()
         high = data['High'].squeeze()
         low = data['Low'].squeeze()
+        volume = data['Volume'].squeeze()
 
-        # Calculate indicators
+        # Indicators
         data['rsi'] = ta.momentum.RSIIndicator(close=close).rsi()
-        data['atr'] = ta.volatility.AverageTrueRange(high=high, low=low, close=close).average_true_range()
-        data['adx'] = ta.trend.ADXIndicator(high=high, low=low, close=close).adx()
+        macd = ta.trend.MACD(close)
+        data['macd'] = macd.macd()
+        data['macd_signal'] = macd.macd_signal()
+        data['macd_diff'] = macd.macd_diff()
 
-        # Williams Alligator (Jaw: SMMA(13), Teeth: SMMA(8), Lips: SMMA(5))
+        # Williams Alligator (overlay on price)
         data['jaw'] = close.ewm(span=13, adjust=False).mean().shift(8)
         data['teeth'] = close.ewm(span=8, adjust=False).mean().shift(5)
         data['lips'] = close.ewm(span=5, adjust=False).mean().shift(3)
 
         # Plotting
-        fig, axs = plt.subplots(4, 1, figsize=(12, 12), sharex=True)
+        fig, axs = plt.subplots(5, 1, figsize=(14, 14), sharex=True)
 
+        # 1. Price Only
         axs[0].plot(data.index, close, label='Close Price', color='blue')
-        axs[0].plot(data.index, data['jaw'], label='Jaw (13, 8)', color='navy')
-        axs[0].plot(data.index, data['teeth'], label='Teeth (8, 5)', color='red')
-        axs[0].plot(data.index, data['lips'], label='Lips (5, 3)', color='green')
-        axs[0].set_title(f'{ticker} - Last 24h Price with Williams Alligator')
-        axs[0].legend()
+        axs[0].set_title(f'{ticker} - Last 24h Close Price')
+        axs[0].yaxis.tick_right()
+        axs[0].legend(loc='upper left')
 
-        axs[1].plot(data.index, data['rsi'], label='RSI', color='purple')
-        axs[1].axhline(70, color='red', linestyle='--', linewidth=0.8)
-        axs[1].axhline(30, color='green', linestyle='--', linewidth=0.8)
-        axs[1].legend()
+        # 2. Williams Alligator
+        axs[1].plot(data.index, data['jaw'], label='Jaw (13,8)', color='navy', linewidth=1)
+        axs[1].plot(data.index, data['teeth'], label='Teeth (8,5)', color='red', linewidth=1)
+        axs[1].plot(data.index, data['lips'], label='Lips (5,3)', color='green', linewidth=1)
+        axs[1].set_title('Williams Alligator')
+        axs[1].yaxis.tick_right()
+        axs[1].legend(loc='upper left')
 
-        axs[2].plot(data.index, data['atr'], label='ATR', color='orange')
-        axs[2].legend()
+        # 3. RSI
+        axs[2].plot(data.index, data['rsi'], label='RSI', color='purple')
+        axs[2].axhline(70, color='red', linestyle='--', linewidth=0.8)
+        axs[2].axhline(30, color='green', linestyle='--', linewidth=0.8)
+        axs[2].set_title('Relative Strength Index')
+        axs[2].yaxis.tick_right()
+        axs[2].legend(loc='upper left')
 
-        axs[3].plot(data.index, data['adx'], label='ADX', color='brown')
-        axs[3].legend()
+        # 4. MACD with Histogram
+        axs[3].plot(data.index, data['macd'], label='MACD', color='black')
+        axs[3].plot(data.index, data['macd_signal'], label='Signal', color='orange')
+        axs[3].bar(data.index, data['macd_diff'], label='Histogram', color='gray', alpha=0.5)
+        axs[3].set_title('MACD')
+        axs[3].yaxis.tick_right()
+        axs[3].legend(loc='upper left')
+
+        # 5. Volume
+        axs[4].bar(data.index, volume, color='slategray')
+        axs[4].set_title('Volume')
+        axs[4].yaxis.tick_right()
 
         plt.tight_layout()
         buf = io.BytesIO()
