@@ -21,11 +21,12 @@ def chart():
         if data.empty:
             return jsonify({"error": f"No data found for ticker {ticker}"}), 404
 
-        # Calculate indicators using proper 1D Series
-        close = data['Close']
-        high = data['High']
-        low = data['Low']
+        # Ensure data columns are 1D Series
+        close = data['Close'].squeeze()
+        high = data['High'].squeeze()
+        low = data['Low'].squeeze()
 
+        # Calculate indicators
         data['rsi'] = ta.momentum.RSIIndicator(close=close).rsi()
         data['atr'] = ta.volatility.AverageTrueRange(high=high, low=low, close=close).average_true_range()
         data['adx'] = ta.trend.ADXIndicator(high=high, low=low, close=close).adx()
