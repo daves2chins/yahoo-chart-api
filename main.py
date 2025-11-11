@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import ta
 import io
 import datetime
+import os
 
 app = Flask(__name__)
 
@@ -49,11 +50,9 @@ def chart():
         plt.close(fig)
 
         return send_file(buf, mimetype='image/png')
-
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    import os
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
