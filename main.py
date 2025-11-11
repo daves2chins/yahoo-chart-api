@@ -5,6 +5,7 @@ import ta
 import io
 import datetime
 import os
+import pandas as pd
 
 app = Flask(__name__)
 
@@ -20,15 +21,20 @@ def chart():
         if data.empty:
             return jsonify({"error": f"No data found for ticker {ticker}"}), 404
 
+        # Ensure columns are Series, not DataFrame slices
+        close = data['Close']
+        high = data['High']
+        low = data['Low']
+
         # Calculate indicators
-        data['rsi'] = ta.momentum.RSIIndicator(data['Close']).rsi()
-        data['atr'] = ta.volatility.AverageTrueRange(data['High'], data['Low'], data['Close']).average_true_range()
-        data['adx'] = ta.trend.ADXIndicator(data['High'], data['Low'], data['Close']).adx()
+        data['rsi'] = ta.momentum.RSIIndicator(close).rsi()
+        data['atr'] = ta.volatility.AverageTrueRange(high, low, close).average_true_range()
+        data['adx'] = ta.trend.ADXIndicator(high, low, close).adx()
 
         # Plotting
         fig, axs = plt.subplots(4, 1, figsize=(10, 10), sharex=True)
 
-        axs[0].plot(data.index, data['Close'], label='Close Price', color='blue')
+        axs[0].plot(data.index, close, label='Close Price', color='blue')
         axs[0].set_title(f'{ticker} - Last 24h Price')
         axs[0].legend()
 
@@ -50,6 +56,7 @@ def chart():
         plt.close(fig)
 
         return send_file(buf, mimetype='image/png')
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
